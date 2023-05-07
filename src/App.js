@@ -5,6 +5,7 @@ import Navbar from "./seenes/global/Navbar.jsx";
 import ItemDetails from "./seenes/itemDetails/ItemDetails.jsx";
 import Confirmation from "./seenes/checkout/Confirmation.jsx";
 import CheckOut from "./seenes/checkout/CheckOut.jsx";
+import CartMenu from "./seenes/global/CartMenu.jsx";
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -26,6 +27,7 @@ function App() {
           <Route path="/checkout" element={<CheckOut />} />
           <Route path="/checkout/success" element={<Confirmation />} />
         </Routes>
+        <CartMenu />
       </BrowserRouter>
     </div>
   );

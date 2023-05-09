@@ -38,7 +38,7 @@ const Item = ({ item, width }) => {
           width="300px"
           height="400px"
           src={`http://localhost:1337${url}`}
-          Alt={item.name}
+          alt={item.name}
           onClick={() =>
             navigate(`/item/${item.id}
           `)

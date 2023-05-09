@@ -1,9 +1,16 @@
-import React from 'react'
+import React from "react";
+import MainCarousel from "./MainCarousel";
+import ShoppingList from "./ShoppingList";
+import Subscribe from "./Subscribe";
 
 function Home() {
   return (
-    <div>Home</div>
-  )
+    <div>
+      <MainCarousel></MainCarousel>
+      <ShoppingList />
+      <Subscribe />
+    </div>
+  );
 }
 
-export default Home
+export default Home;

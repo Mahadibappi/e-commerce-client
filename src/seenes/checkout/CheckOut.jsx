@@ -90,8 +90,19 @@ function CheckOut() {
   const isFirstStep = activeStep === 0;
   const isSecondStep = activeStep === 1;
 
-  const handleFormSubmit = async (value, actions) => {
+  const handleFormSubmit = async (values, actions) => {
     setActiveStep(activeStep + 1);
+    if (isFirstStep && values.shippingAddress.isSameAddress) {
+      actions.setFieldValue("shippingAddress", {
+        ...values.billingAddress,
+        isSameAddress: true,
+      });
+    }
+
+    if (isSecondStep) {
+      makePayment(values);
+      actions.setTouched({});
+    }
   };
 
   async function makePayment(values) {}
@@ -110,7 +121,7 @@ function CheckOut() {
         <Formik
           onSubmit={handleFormSubmit}
           initialValues={initialValues}
-          validationSchema={checkoutSchema}
+          validationSchema={checkoutSchema[activeStep]}
         >
           {({
             values,
@@ -120,20 +131,21 @@ function CheckOut() {
             handleBlur,
             handleSubmit,
             setFieldValue,
-          }) => {
-            <form onsubmit={handleSubmit}>
+          }) => (
+            <form onSubmit={handleSubmit}>
               {isFirstStep && (
                 <Shipping
                   values={values}
                   errors={errors}
+                  touched={touched}
                   handleChange={handleChange}
                   handleBlur={handleBlur}
                   handleSubmit={handleBlur}
                   setFieldValue={setFieldValue}
                 />
               )}
-            </form>;
-          }}
+            </form>
+          )}
         </Formik>
       </Box>
     </Box>

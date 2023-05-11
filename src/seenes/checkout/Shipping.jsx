@@ -1,35 +1,33 @@
 import { Box, Checkbox, FormControlLabel, Typography } from "@mui/material";
-import React from "react";
 import AddressForm from "./AddressForm";
 
 const Shipping = ({
   values,
-  errors,
   touched,
+  errors,
   handleChange,
   handleBlur,
-  handleSubmit,
   setFieldValue,
 }) => {
   return (
     <Box m="30px auto">
+      {/* BILLING FORM */}
       <Box>
-        <Typography sx={{ mb: "15px", fontSize: "18px" }}>
+        <Typography sx={{ mb: "15px" }} fontSize="18px">
           Billing Information
         </Typography>
         <AddressForm
           type="billingAddress"
-          value={values.billingAddress}
-          errors={errors}
+          values={values.billingAddress}
           touched={touched}
-          handleChange={handleChange}
+          errors={errors}
           handleBlur={handleBlur}
+          handleChange={handleChange}
         />
       </Box>
 
-      <Box>
+      <Box mb="20px">
         <FormControlLabel
-          label="Same for Shipping Address"
           control={
             <Checkbox
               defaultChecked
@@ -42,19 +40,23 @@ const Shipping = ({
               }
             />
           }
+          label="Same for Shipping Address"
         />
       </Box>
-      {/* shipping form */}
+
+      {/* SHIPPING FORM */}
       {!values.shippingAddress.isSameAddress && (
         <Box>
-          <Typography>Shipping Information</Typography>
+          <Typography sx={{ mb: "15px" }} fontSize="18px">
+            Shipping Information
+          </Typography>
           <AddressForm
             type="shippingAddress"
-            value={values.shippingAddress}
-            errors={errors}
+            values={values.shippingAddress}
             touched={touched}
-            handleChange={handleChange}
+            errors={errors}
             handleBlur={handleBlur}
+            handleChange={handleChange}
           />
         </Box>
       )}

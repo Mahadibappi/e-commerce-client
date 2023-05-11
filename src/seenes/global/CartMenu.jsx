@@ -72,11 +72,13 @@ function CartMenu() {
                   <Box>
                     <FlexBox mb="5px">
                       <Typography>{item.attributes.name}</Typography>
-                      <IconButton>
-                        onclick=
-                        {() => dispatch(removeFromCart({ id: item.id }))}
+                      <IconButton
+                        onClick={() =>
+                          dispatch(removeFromCart({ id: item.id }))
+                        }
+                      >
+                        <CloseIcon />
                       </IconButton>
-                      <CloseIcon />
                     </FlexBox>
                     <Typography>{item.attributes.shortDescription}</Typography>
                     <FlexBox m="15px 0">

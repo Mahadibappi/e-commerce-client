@@ -1,9 +1,17 @@
-import { Box, Step, StepLabel, Stepper } from "@mui/material";
+import { Box, Button, Step, StepLabel, Stepper } from "@mui/material";
 import React, { useState } from "react";
 import { useSelector } from "react-redux";
 import { Formik } from "formik";
 import * as yup from "yup";
 import Shipping from "./Shipping";
+import { shades } from "../../theme";
+import Payment from "./Payment";
+import { loadStripe } from "@stripe/stripe-js";
+
+// eslint-disable-next-line no-unused-vars
+const stripePromise = loadStripe(
+  "pk_test_51M6eOGCnxyBmnrrVLNr4LHEpniAkZ1FhXx1cjpSZ5p6yVqQxOgF4HPGbqBs7FhDHHZFSOERMRGoOP61VqNAqa1ix008QRtthlG"
+);
 
 const initialValues = {
   billingAddress: {
@@ -105,7 +113,23 @@ function CheckOut() {
     }
   };
 
-  async function makePayment(values) {}
+  async function makePayment(values) {
+    const stripe = stripePromise;
+    const requestBody = {
+      userName: [values.firstName, values.lastName].join(" "),
+      email: values.email,
+      products: cart.map(({ id, count }) => ({ id, count })),
+    };
+    const response = await fetch("http://locaclhost:1337/api/orders", {
+      method: "POST",
+      headers: { "Content-type": "application/json" },
+      body: JSON.stringify(requestBody),
+    });
+    const session = await response.json();
+    await stripe.redirectToCheckout({
+      sessionId: session.id,
+    });
+  }
 
   return (
     <Box width="80%" margin="100px auto">
@@ -144,6 +168,53 @@ function CheckOut() {
                   setFieldValue={setFieldValue}
                 />
               )}
+              {isSecondStep && (
+                <Payment
+                  values={values}
+                  errors={errors}
+                  touched={touched}
+                  handleChange={handleChange}
+                  handleBlur={handleBlur}
+                  handleSubmit={handleBlur}
+                  setFieldValue={setFieldValue}
+                />
+              )}
+
+              <Box display="flex" justifyContent="space-between" gap="50px">
+                {isSecondStep && (
+                  <Button
+                    fullWidth
+                    color="primary"
+                    variant="contained"
+                    sx={{
+                      backgroundColor: shades.primary[200],
+                      boxShadow: "none",
+                      color: "white",
+                      borderRadius: 0,
+                      padding: "15px 40px",
+                    }}
+                    onClick={() => setActiveStep(activeStep - 1)}
+                  >
+                    Back
+                  </Button>
+                )}
+                <Button
+                  fullWidth
+                  type="submit"
+                  color="primary"
+                  variant="contained"
+                  sx={{
+                    backgroundColor: shades.primary[400],
+                    boxShadow: "none",
+                    color: "white",
+                    borderRadius: 0,
+                    padding: "15px 40px",
+                  }}
+                  onClick={() => setActiveStep(activeStep + 1)}
+                >
+                  {isFirstStep ? "Next" : "Place Order"}
+                </Button>
+              </Box>
             </form>
           )}
         </Formik>

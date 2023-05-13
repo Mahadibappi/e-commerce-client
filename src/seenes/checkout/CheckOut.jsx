@@ -1,17 +1,150 @@
-import { Box, Button, Step, StepLabel, Stepper } from "@mui/material";
-import React, { useState } from "react";
 import { useSelector } from "react-redux";
+import { Box, Button, Stepper, Step, StepLabel } from "@mui/material";
 import { Formik } from "formik";
+import { useState } from "react";
 import * as yup from "yup";
-import Shipping from "./Shipping";
 import { shades } from "../../theme";
 import Payment from "./Payment";
+import Shipping from "./Shipping";
 import { loadStripe } from "@stripe/stripe-js";
 
-// eslint-disable-next-line no-unused-vars
 const stripePromise = loadStripe(
   "pk_test_51M6eOGCnxyBmnrrVLNr4LHEpniAkZ1FhXx1cjpSZ5p6yVqQxOgF4HPGbqBs7FhDHHZFSOERMRGoOP61VqNAqa1ix008QRtthlG"
 );
+
+const Checkout = () => {
+  const [activeStep, setActiveStep] = useState(0);
+  const cart = useSelector((state) => state.cart.cart);
+  const isFirstStep = activeStep === 0;
+  const isSecondStep = activeStep === 1;
+
+  const handleFormSubmit = async (values, actions) => {
+    setActiveStep(activeStep + 1);
+
+    // this copies the billing address onto shipping address
+    if (isFirstStep && values.shippingAddress.isSameAddress) {
+      actions.setFieldValue("shippingAddress", {
+        ...values.billingAddress,
+        isSameAddress: true,
+      });
+    }
+
+    if (isSecondStep) {
+      makePayment(values);
+    }
+
+    actions.setTouched({});
+  };
+
+  async function makePayment(values) {
+    const stripe = await stripePromise;
+    const requestBody = {
+      userName: [values.firstName, values.lastName].join(" "),
+      email: values.email,
+      products: cart.map(({ id, count }) => ({
+        id,
+        count,
+      })),
+    };
+
+    const response = await fetch("http://localhost:1337/api/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(requestBody),
+    });
+    const session = await response.json();
+    await stripe.redirectToCheckout({
+      sessionId: session.id,
+    });
+  }
+
+  return (
+    <Box width="80%" m="100px auto">
+      <Stepper activeStep={activeStep} sx={{ m: "20px 0" }}>
+        <Step>
+          <StepLabel>Billing</StepLabel>
+        </Step>
+        <Step>
+          <StepLabel>Payment</StepLabel>
+        </Step>
+      </Stepper>
+      <Box>
+        <Formik
+          onSubmit={handleFormSubmit}
+          initialValues={initialValues}
+          validationSchema={checkoutSchema[activeStep]}
+        >
+          {({
+            values,
+            errors,
+            touched,
+            handleBlur,
+            handleChange,
+            handleSubmit,
+            setFieldValue,
+          }) => (
+            <form onSubmit={handleSubmit}>
+              {isFirstStep && (
+                <Shipping
+                  values={values}
+                  errors={errors}
+                  touched={touched}
+                  handleBlur={handleBlur}
+                  handleChange={handleChange}
+                  setFieldValue={setFieldValue}
+                />
+              )}
+              {isSecondStep && (
+                <Payment
+                  values={values}
+                  errors={errors}
+                  touched={touched}
+                  handleBlur={handleBlur}
+                  handleChange={handleChange}
+                  setFieldValue={setFieldValue}
+                />
+              )}
+              <Box display="flex" justifyContent="space-between" gap="50px">
+                {!isFirstStep && (
+                  <Button
+                    fullWidth
+                    color="primary"
+                    variant="contained"
+                    sx={{
+                      backgroundColor: shades.primary[200],
+                      boxShadow: "none",
+                      color: "white",
+                      borderRadius: 0,
+                      padding: "15px 40px",
+                    }}
+                    onClick={() => setActiveStep(activeStep - 1)}
+                  >
+                    Back
+                  </Button>
+                )}
+                <Button
+                  fullWidth
+                  type="submit"
+                  color="primary"
+                  variant="contained"
+                  sx={{
+                    backgroundColor: shades.primary[400],
+                    boxShadow: "none",
+                    color: "white",
+                    borderRadius: 0,
+                    padding: "15px 40px",
+                  }}
+                >
+                  {!isSecondStep ? "Next" : "Place Order"}
+                </Button>
+              </Box>
+            </form>
+          )}
+        </Formik>
+      </Box>
+    </Box>
+  );
+};
 
 const initialValues = {
   billingAddress: {
@@ -21,7 +154,7 @@ const initialValues = {
     street1: "",
     street2: "",
     city: "",
-    state: " ",
+    state: "",
     zipCode: "",
   },
   shippingAddress: {
@@ -32,10 +165,10 @@ const initialValues = {
     street1: "",
     street2: "",
     city: "",
-    state: " ",
+    state: "",
     zipCode: "",
   },
-  email: " ",
+  email: "",
   phoneNumber: "",
 };
 
@@ -90,137 +223,4 @@ const checkoutSchema = [
   }),
 ];
 
-function CheckOut() {
-  const [activeStep, setActiveStep] = useState(0);
-
-  const cart = useSelector((state) => state.cart.cart);
-
-  const isFirstStep = activeStep === 0;
-  const isSecondStep = activeStep === 1;
-
-  const handleFormSubmit = async (values, actions) => {
-    setActiveStep(activeStep + 1);
-    if (isFirstStep && values.shippingAddress.isSameAddress) {
-      actions.setFieldValue("shippingAddress", {
-        ...values.billingAddress,
-        isSameAddress: true,
-      });
-    }
-
-    if (isSecondStep) {
-      makePayment(values);
-      actions.setTouched({});
-    }
-  };
-
-  async function makePayment(values) {
-    const stripe = stripePromise;
-    const requestBody = {
-      userName: [values.firstName, values.lastName].join(" "),
-      email: values.email,
-      products: cart.map(({ id, count }) => ({ id, count })),
-    };
-    const response = await fetch("http://locaclhost:1337/api/orders", {
-      method: "POST",
-      headers: { "Content-type": "application/json" },
-      body: JSON.stringify(requestBody),
-    });
-    const session = await response.json();
-    await stripe.redirectToCheckout({
-      sessionId: session.id,
-    });
-  }
-
-  return (
-    <Box width="80%" margin="100px auto">
-      <Stepper activeStep={activeStep} sx={{ m: "20px 0" }}>
-        <Step>
-          <StepLabel>Billing</StepLabel>
-        </Step>
-        <Step>
-          <StepLabel>Payment</StepLabel>
-        </Step>
-      </Stepper>
-      <Box>
-        <Formik
-          onSubmit={handleFormSubmit}
-          initialValues={initialValues}
-          validationSchema={checkoutSchema[activeStep]}
-        >
-          {({
-            values,
-            errors,
-            touched,
-            handleChange,
-            handleBlur,
-            handleSubmit,
-            setFieldValue,
-          }) => (
-            <form onSubmit={handleSubmit}>
-              {isFirstStep && (
-                <Shipping
-                  values={values}
-                  errors={errors}
-                  touched={touched}
-                  handleChange={handleChange}
-                  handleBlur={handleBlur}
-                  handleSubmit={handleBlur}
-                  setFieldValue={setFieldValue}
-                />
-              )}
-              {isSecondStep && (
-                <Payment
-                  values={values}
-                  errors={errors}
-                  touched={touched}
-                  handleChange={handleChange}
-                  handleBlur={handleBlur}
-                  handleSubmit={handleBlur}
-                  setFieldValue={setFieldValue}
-                />
-              )}
-
-              <Box display="flex" justifyContent="space-between" gap="50px">
-                {isSecondStep && (
-                  <Button
-                    fullWidth
-                    color="primary"
-                    variant="contained"
-                    sx={{
-                      backgroundColor: shades.primary[200],
-                      boxShadow: "none",
-                      color: "white",
-                      borderRadius: 0,
-                      padding: "15px 40px",
-                    }}
-                    onClick={() => setActiveStep(activeStep - 1)}
-                  >
-                    Back
-                  </Button>
-                )}
-                <Button
-                  fullWidth
-                  type="submit"
-                  color="primary"
-                  variant="contained"
-                  sx={{
-                    backgroundColor: shades.primary[400],
-                    boxShadow: "none",
-                    color: "white",
-                    borderRadius: 0,
-                    padding: "15px 40px",
-                  }}
-                  onClick={() => setActiveStep(activeStep + 1)}
-                >
-                  {isFirstStep ? "Next" : "Place Order"}
-                </Button>
-              </Box>
-            </form>
-          )}
-        </Formik>
-      </Box>
-    </Box>
-  );
-}
-
-export default CheckOut;
+export default Checkout;
